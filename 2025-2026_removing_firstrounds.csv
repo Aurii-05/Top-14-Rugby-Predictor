@@ -1,0 +1,44 @@
+Date,Home_Team,Away_Team,Winner,Home_Win_Probability,Correct,Predicted_Winner,Confidence
+2025-10-11,Stade Français Paris,Stade Rochelais,Stade Français Paris,0.7929560058464877,True,Stade Français Paris,0.7929560058464877
+2025-10-11,LOU Rugby,USA Perpignan,LOU Rugby,0.7954379654631663,True,LOU Rugby,0.7954379654631663
+2025-10-11,ASM Clermont,RC Toulon,ASM Clermont,0.7396628726670039,True,ASM Clermont,0.7396628726670039
+2025-10-11,Section Paloise,Aviron Bayonnais,Section Paloise,0.7705484946576239,True,Section Paloise,0.7705484946576239
+2025-10-11,Racing 92,Montpellier Hérault Rugby,Racing 92,0.5475150041182759,True,Racing 92,0.5475150041182759
+2025-10-11,US Montauban,Castres Olympique,Castres Olympique,0.17085369738310915,True,Castres Olympique,0.8291463026168908
+2025-10-12,Stade Toulousain,Union Bordeaux-Bègles,Stade Toulousain,0.9182461922902441,True,Stade Toulousain,0.9182461922902441
+2025-10-18,Aviron Bayonnais,ASM Clermont,Aviron Bayonnais,0.7898494586247351,True,Aviron Bayonnais,0.7898494586247351
+2025-10-18,Section Paloise,Stade Toulousain,Section Paloise,0.6263652844253003,True,Section Paloise,0.6263652844253003
+2025-10-18,Stade Rochelais,US Montauban,Stade Rochelais,0.7899597435184771,True,Stade Rochelais,0.7899597435184771
+2025-10-18,Castres Olympique,Stade Français Paris,Castres Olympique,0.9198498396837766,True,Castres Olympique,0.9198498396837766
+2025-10-18,USA Perpignan,Union Bordeaux-Bègles,Union Bordeaux-Bègles,0.5158307278573343,False,USA Perpignan,0.5158307278573343
+2025-10-18,Montpellier Hérault Rugby,LOU Rugby,Montpellier Hérault Rugby,0.7998779360567306,True,Montpellier Hérault Rugby,0.7998779360567306
+2025-10-19,RC Toulon,Racing 92,RC Toulon,0.8471262020562572,True,RC Toulon,0.8471262020562572
+2025-10-25,LOU Rugby,Stade Rochelais,Stade Rochelais,0.6287194196072301,False,LOU Rugby,0.6287194196072301
+2025-10-25,ASM Clermont,Castres Olympique,ASM Clermont,0.8060646014480448,True,ASM Clermont,0.8060646014480448
+2025-10-25,US Montauban,USA Perpignan,US Montauban,0.17973941798941803,False,USA Perpignan,0.8202605820105819
+2025-10-25,Stade Français Paris,Montpellier Hérault Rugby,Stade Français Paris,0.6638007280374151,True,Stade Français Paris,0.6638007280374151
+2025-10-25,Union Bordeaux-Bègles,Aviron Bayonnais,Union Bordeaux-Bègles,0.9214436776031886,True,Union Bordeaux-Bègles,0.9214436776031886
+2025-10-25,Racing 92,Section Paloise,Racing 92,0.7599338063231189,True,Racing 92,0.7599338063231189
+2025-10-26,Stade Toulousain,RC Toulon,Stade Toulousain,0.8527598952247311,True,Stade Toulousain,0.8527598952247311
+2025-11-01,Aviron Bayonnais,US Montauban,Aviron Bayonnais,0.8672187806477285,True,Aviron Bayonnais,0.8672187806477285
+2025-11-01,Castres Olympique,Union Bordeaux-Bègles,Union Bordeaux-Bègles,0.761931913864462,False,Castres Olympique,0.761931913864462
+2025-11-01,Montpellier Hérault Rugby,ASM Clermont,ASM Clermont,0.6437678038073283,False,Montpellier Hérault Rugby,0.6437678038073283
+2025-11-01,RC Toulon,LOU Rugby,RC Toulon,0.8359344213431419,True,RC Toulon,0.8359344213431419
+2025-11-01,Stade Toulousain,Stade Français Paris,Stade Toulousain,0.8727280747004346,True,Stade Toulousain,0.8727280747004346
+2025-11-01,Section Paloise,USA Perpignan,Section Paloise,0.8276972737331334,True,Section Paloise,0.8276972737331334
+2025-11-02,Stade Rochelais,Racing 92,Stade Rochelais,0.9222880211192325,True,Stade Rochelais,0.9222880211192325
+2025-11-08,RC Toulon,Stade Rochelais,RC Toulon,0.732895746203105,True,RC Toulon,0.732895746203105
+2025-11-21,Union Bordeaux-Bègles,Section Paloise,Section Paloise,0.8512212519427518,False,Union Bordeaux-Bègles,0.8512212519427518
+2025-11-22,USA Perpignan,Montpellier Hérault Rugby,Montpellier Hérault Rugby,0.42721405498141024,True,Montpellier Hérault Rugby,0.5727859450185897
+2025-11-22,Racing 92,Aviron Bayonnais,Racing 92,0.7373866509696989,True,Racing 92,0.7373866509696989
+2025-11-22,LOU Rugby,ASM Clermont,LOU Rugby,0.8150865953038282,True,LOU Rugby,0.8150865953038282
+2025-11-22,Stade Rochelais,Castres Olympique,Castres Olympique,0.8007207964843557,False,Stade Rochelais,0.8007207964843557
+2025-11-22,US Montauban,Stade Toulousain,Stade Toulousain,0.12799622961579485,True,Stade Toulousain,0.8720037703842052
+2025-11-23,Stade Français Paris,RC Toulon,Stade Français Paris,0.6717759753946668,True,Stade Français Paris,0.6717759753946668
+2025-11-29,Stade Toulousain,Racing 92,Stade Toulousain,0.8119827480460328,True,Stade Toulousain,0.8119827480460328
+2025-11-29,Aviron Bayonnais,LOU Rugby,Aviron Bayonnais,0.9322526684072202,True,Aviron Bayonnais,0.9322526684072202
+2025-11-29,Castres Olympique,USA Perpignan,Castres Olympique,0.8131440935558122,True,Castres Olympique,0.8131440935558122
+2025-11-29,RC Toulon,US Montauban,RC Toulon,0.8241854041132757,True,RC Toulon,0.8241854041132757
+2025-11-29,ASM Clermont,Stade Français Paris,ASM Clermont,0.6165372323614458,True,ASM Clermont,0.6165372323614458
+2025-11-29,Montpellier Hérault Rugby,Union Bordeaux-Bègles,Montpellier Hérault Rugby,0.7023343377178884,True,Montpellier Hérault Rugby,0.7023343377178884
+2025-11-30,Section Paloise,Stade Rochelais,Section Paloise,0.7782438860506755,True,Section Paloise,0.7782438860506755
