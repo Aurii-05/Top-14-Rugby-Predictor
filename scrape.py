@@ -9,6 +9,7 @@ import time
 import re
 import queue
 import os
+import numpy as np
 
 # Mapping French stats to English column names
 STATS_TRANSLATIONS = {
@@ -28,7 +29,7 @@ task_queue = queue.Queue()
 all_data = []
 total_matches_scraped = 0
 
-# Locks to prevent printing or writing collisions
+# Locks
 print_lock = threading.Lock()
 results_lock = threading.Lock()
 
@@ -44,7 +45,6 @@ def extract_date_time(text_string):
             time_match.group(1) if time_match else None)
 
 def get_clean_urls(raw_url):
-    # Strip any sub-paths to get the base match ID, then rebuild proper endpoints
     root = raw_url.split("?")[0]
     for suffix in ["/statistiques-du-match", "/compositions", "/resume", "/fil-du-match"]:
         if root.endswith(suffix):
@@ -52,7 +52,6 @@ def get_clean_urls(raw_url):
     return f"{root}/statistiques-du-match", f"{root}/compositions"
 
 def create_driver():
-    # Setup headless Chrome with options to avoid bot detection
     chrome_options = Options()
     chrome_options.add_argument("--headless=new") 
     user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
@@ -67,7 +66,6 @@ def create_driver():
     chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
     chrome_options.add_experimental_option('useAutomationExtension', False)
     
-    # Block images to speed up loading
     prefs = {"profile.managed_default_content_settings.images": 2}
     chrome_options.add_experimental_option("prefs", prefs)
     
@@ -76,7 +74,6 @@ def create_driver():
     return driver
 
 def scrape_phase_data(driver, season, phase):
-    # Main logic to scrape a specific week (Day/Phase)
     global total_matches_scraped
     phase_data = []
 
@@ -106,8 +103,18 @@ def scrape_phase_data(driver, season, phase):
             
             home_team = driver.find_element(By.CSS_SELECTOR, ".match-header-club__wrapper--left .match-header-club__title").get_attribute("textContent").strip()
             away_team = driver.find_element(By.CSS_SELECTOR, ".match-header-club__wrapper--right .match-header-club__title").get_attribute("textContent").strip()
-            score_text = driver.find_element(By.CSS_SELECTOR, ".match-header__title .title").get_attribute("textContent").strip()
-            h_score, a_score = map(int, score_text.split("-"))
+            
+            # Handle Future Games
+            try:
+                score_text = driver.find_element(By.CSS_SELECTOR, ".match-header__title .title").get_attribute("textContent").strip()
+                if "-" in score_text:
+                    h_score, a_score = map(int, score_text.split("-"))
+                    winner = home_team if h_score > a_score else (away_team if a_score > h_score else "Draw")
+                else:
+                    raise ValueError("Future Game")
+            except:
+                h_score, a_score = 0, 0
+                winner = None # Flags this as a future game
             
             meta_text = driver.find_element(By.CLASS_NAME, "match-header__season-day").get_attribute("textContent").strip()
             match_date, match_time = extract_date_time(meta_text)
@@ -116,24 +123,24 @@ def scrape_phase_data(driver, season, phase):
                 "Season": season, "Phase": phase, "Date": match_date, "Time": match_time,
                 "Home_Team": home_team, "Away_Team": away_team, 
                 "Home_Score": h_score, "Away_Score": a_score,
-                "Winner": home_team if h_score > a_score else (away_team if a_score > h_score else "Draw"),
+                "Winner": winner,
                 "Referee": "Unknown",
                 "Home_Lineup": "", "Away_Lineup": ""
             }
 
-            # Loop through stat bars
-            bars = driver.find_elements(By.CSS_SELECTOR, ".stats-bar")
-            for bar in bars:
-                try:
-                    title = bar.find_element(By.CSS_SELECTOR, ".stats-bar__title").get_attribute("textContent").strip()
-                    if title in STATS_TRANSLATIONS:
-                        en_title = STATS_TRANSLATIONS[title]
-                        val_left = bar.find_element(By.CSS_SELECTOR, ".stats-bar__val--left").get_attribute("textContent")
-                        val_right = bar.find_element(By.CSS_SELECTOR, ".stats-bar__val--right").get_attribute("textContent")
-                        row[f"Home_{en_title}"] = clean_value(val_left)
-                        row[f"Away_{en_title}"] = clean_value(val_right)
-                        stats_count += 1
-                except: continue
+            if winner: # Only scrape stats bars if game happened
+                bars = driver.find_elements(By.CSS_SELECTOR, ".stats-bar")
+                for bar in bars:
+                    try:
+                        title = bar.find_element(By.CSS_SELECTOR, ".stats-bar__title").get_attribute("textContent").strip()
+                        if title in STATS_TRANSLATIONS:
+                            en_title = STATS_TRANSLATIONS[title]
+                            val_left = bar.find_element(By.CSS_SELECTOR, ".stats-bar__val--left").get_attribute("textContent")
+                            val_right = bar.find_element(By.CSS_SELECTOR, ".stats-bar__val--right").get_attribute("textContent")
+                            row[f"Home_{en_title}"] = clean_value(val_left)
+                            row[f"Away_{en_title}"] = clean_value(val_right)
+                            stats_count += 1
+                    except: continue
 
         except Exception:
             continue
@@ -151,7 +158,6 @@ def scrape_phase_data(driver, season, phase):
                 t1_names = [p.get_attribute("textContent").strip() for p in team_blocks[0].find_elements(By.CLASS_NAME, "player-block__name")]
                 t2_names = [p.get_attribute("textContent").strip() for p in team_blocks[1].find_elements(By.CLASS_NAME, "player-block__name")]
                 
-                # Check formatting to assign home/away correctly
                 if is_visiting_first:
                     row["Away_Lineup"] = ", ".join(t1_names)
                     row["Home_Lineup"] = ", ".join(t2_names)
@@ -163,7 +169,6 @@ def scrape_phase_data(driver, season, phase):
             else:
                 p_debug = "0 Blocks"
 
-            # Grab Referee
             try:
                 ref_block = classic_container.find_element(By.CSS_SELECTOR, ".line-up__classic-team--officials")
                 officials = ref_block.find_elements(By.CLASS_NAME, "player-block")
@@ -182,14 +187,15 @@ def scrape_phase_data(driver, season, phase):
         
         with print_lock:
             total_matches_scraped += 1
-            print(f"   [OK] [{season} {phase}] {home_team} vs {away_team}")
+            # Mark future games clearly in print output
+            status_tag = "[OK]" if row['Winner'] else "[FUTURE]"
+            print(f"   {status_tag} [{season} {phase}] {home_team} vs {away_team}")
             print(f"        Stats: {stats_count} | Ref: {row['Referee']} | Lineups: {p_debug}")
             print("-" * 40)
             
     return phase_data
 
 def worker_thread(worker_id):
-    # Worker process: grabs tasks from queue until empty
     print(f"[Worker {worker_id}] Starting Browser...")
     driver = create_driver()
     
@@ -212,26 +218,77 @@ def worker_thread(worker_id):
     print(f"[Worker {worker_id}] Finished. Closing Browser.")
     driver.quit()
 
+def get_completed_phases(filename):
+    """Returns a set of (Season, Phase) tuples that are already fully scraped."""
+    if not os.path.exists(filename): 
+        return set()
+    
+    print(f"Checking {filename} for existing data...")
+    df = pd.read_csv(filename)
+    
+    # Only count rows where we actually have a winner (game is over)
+    finished_games = df[df['Winner'].notna()]
+    
+    # Count completed games per phase
+    counts = finished_games.groupby(['Season', 'Phase']).size()
+    
+    # Define expected game counts
+    # Regular season (jX) usually has 7. Playoffs have specific counts.
+    PLAYOFF_COUNTS = {
+        "barrage": 2,
+        "demi-finale": 2,
+        "finale": 1,
+        "access-top-14": 1,
+        "match-daccession": 1
+    }
+
+    completed = set()
+    for (season, phase), count in counts.items():
+        if phase.startswith('j'):
+            if count >= 7: # Regular season standard
+                completed.add((season, phase))
+        elif phase in PLAYOFF_COUNTS:
+            if count >= PLAYOFF_COUNTS[phase]: # Playoff standard
+                completed.add((season, phase))
+            
+    return completed
+
 def main():
-    # 1. Populate the Queue
     seasons = ["2020-2021","2021-2022","2022-2023", "2023-2024", "2024-2025", "2025-2026"]
     playoff_phases = ["barrage", "demi-finale", "finale", "access-top-14", "match-daccession"]
-    
+    filename = "Top14_Raw_Scrape.csv"
+
+    # 1. Identify what to skip
+    completed_phases = get_completed_phases(filename)
+    print(f"Skipping {len(completed_phases)} previously completed phases.")
+
+    # 2. Populate the Queue
     print("--- Setting up tasks ---")
     for s in seasons:
-        # Stop at day 12 for the current season, otherwise go to 26
-        limit = 12 if s == "2025-2026" else 27
+        # Increase limit to include the future round (e.g., 14 to get J13)
+        limit = 13 if s == "2025-2026" else 27
         for j in range(1, limit):
-            task_queue.put((s, f"j{j}"))
+            phase_id = f"j{j}"
             
-        # Add playoffs for completed seasons
+            # --- SKIP LOGIC ---
+            if (s, phase_id) in completed_phases:
+                continue
+            
+            task_queue.put((s, phase_id))
+            
         if s != "2025-2026":
             for phase in playoff_phases:
+                if (s, phase) in completed_phases:
+                    continue
                 task_queue.put((s, phase))
     
     print(f"Total Tasks in Queue: {task_queue.qsize()}")
     
-    # 2. Launch Threads (change num_workers for more threads (dont blow up your computer))
+    if task_queue.qsize() == 0:
+        print("Nothing new to scrape.")
+        return
+
+    # 3. Launch Threads
     num_workers = 4
     threads = []
     
@@ -242,22 +299,32 @@ def main():
         threads.append(t)
         time.sleep(1) 
 
-    # 3. Wait for completion
     for t in threads:
         t.join()
 
-    # 4. Export
+    # 4. Export (Smart Merge)
     if all_data:
-        df = pd.DataFrame(all_data)
-        filename = "Top14_Raw_Scrape.csv"
+        new_df = pd.DataFrame(all_data)
         
         # Normalize columns
         for k in STATS_TRANSLATIONS.values():
-            if f"Home_{k}" not in df.columns: df[f"Home_{k}"] = 0
-            if f"Away_{k}" not in df.columns: df[f"Away_{k}"] = 0
+            if f"Home_{k}" not in new_df.columns: new_df[f"Home_{k}"] = 0
+            if f"Away_{k}" not in new_df.columns: new_df[f"Away_{k}"] = 0
             
-        df.to_csv(filename, index=False)
-        print(f"\n[Success] Saved {len(df)} matches to {filename}")
+        if os.path.exists(filename):
+            print(f"Merging with existing {filename}...")
+            existing_df = pd.read_csv(filename)
+            combined_df = pd.concat([existing_df, new_df])
+            
+            # DEDUPLICATE: Keep the 'last' entry (the new one) for any Season/Phase/HomeTeam combo
+            final_df = combined_df.drop_duplicates(subset=['Season', 'Phase', 'Home_Team'], keep='last')
+            print(f"Merged: {len(existing_df)} old + {len(new_df)} new -> {len(final_df)} total unique.")
+        else:
+            final_df = new_df
+            print(f"Created new file with {len(final_df)} matches.")
+            
+        final_df.to_csv(filename, index=False)
+        print(f"\n[Success] Database updated.")
     else:
         print("\n[!] No data collected.")
 

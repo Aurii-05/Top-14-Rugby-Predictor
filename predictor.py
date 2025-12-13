@@ -11,8 +11,8 @@ def backtest_model(start_date, end_date):
     df['Date'] = pd.to_datetime(df['Date'], dayfirst=True)
     df = df.sort_values('Date').reset_index(drop=True)
     
-    # Target: 1 if Home Wins, 0 otherwise
-    df['Target'] = (df['Winner'] == df['Home_Team']).astype(int)
+    # Target: 1 if Home Wins, 0 otherwise (Handle NaN for future games)
+    df['Target'] = np.where(df['Winner'].notna(), (df['Winner'] == df['Home_Team']).astype(int), np.nan)
     
     # ---------------------------------------------------------
     # TEAM FORM FEATURES
@@ -98,7 +98,7 @@ def backtest_model(start_date, end_date):
         
         # Post-game: Update player memory for the NEXT loop
         if pd.isna(row['Winner']): continue
-
+        
         if row['Winner'] == row['Home_Team']:
             h_pts, a_pts = 1.0, 0.0
         elif row['Winner'] == 'Draw':
@@ -140,32 +140,39 @@ def backtest_model(start_date, end_date):
         'H_Form_Points', 'A_Form_Points', 'Form_Point_Diff',
         'H_Form_Diff', 'A_Form_Diff'
     ]
+    train_data = df[df['Winner'].notna()].dropna(subset=features)
+    future_data = df[df['Winner'].isna()].dropna(subset=features)
+
+    print(f"Training on {len(train_data)} past games.")
     
-    # Split train/test by date
-    train_data = df[df['Date'] < pd.to_datetime(start_date, dayfirst=True)].dropna(subset=features)
-    test_data = df[(df['Date'] >= pd.to_datetime(start_date, dayfirst=True)) & 
-                   (df['Date'] <= pd.to_datetime(end_date, dayfirst=True))].dropna(subset=features)
-    
-    if len(train_data) < 10:
-        print("Error: Not enough training data.")
-        return None
-    
-    print(f"Training set: {len(train_data)} games. Test set: {len(test_data)} games.")
-    
-    # Random Forest setup
     clf = RandomForestClassifier(n_estimators=300, max_depth=10, min_samples_leaf=3, random_state=1)
     clf.fit(train_data[features], train_data['Target'])
     
+    # Predict Future
+    if not future_data.empty:
+        print(f"Predicting {len(future_data)} future games...")
+        future_preds = clf.predict(future_data[features])
+        future_probs = clf.predict_proba(future_data[features])[:, 1]
+        
+        future_data['Predicted_Home_Win'] = future_preds
+        future_data['Home_Win_Probability'] = future_probs
+        future_data['Correct'] = False # Placeholder
+        
+        return future_data[['Date', 'Home_Team', 'Away_Team', 'Winner', 'Home_Win_Probability', 'Correct']]
+    
+    # Fallback to standard testing if no future games found
+    test_data = df[(df['Date'] >= pd.to_datetime(start_date, dayfirst=True)) & 
+                   (df['Date'] <= pd.to_datetime(end_date, dayfirst=True))].dropna(subset=features)
+                   
     preds = clf.predict(test_data[features])
     probs = clf.predict_proba(test_data[features])[:, 1]
     
-    # Store results
     test_data['Predicted_Home_Win'] = preds
     test_data['Home_Win_Probability'] = probs
     test_data['Correct'] = (test_data['Predicted_Home_Win'] == test_data['Target'])
     
     acc = accuracy_score(test_data['Target'], preds)
-    print(f"\n--- Model Accuracy ({start_date} - {end_date}): {acc:.2%} ---")
+    print(f"\n--- Backtest Accuracy: {acc:.2%} ---")
     
     return test_data[['Date', 'Home_Team', 'Away_Team', 'Winner', 'Home_Win_Probability', 'Correct']]
 
